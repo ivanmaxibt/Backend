@@ -22,6 +22,22 @@ class Product {
     }
 }
 
+class Cart {
+    constructor() {
+        this.id = Math.random().toString(36).substring(2, 11); // Genera un ID aleatorio
+        this.products = [];
+    }
+
+    addProduct(pid, quantity) {
+        const product = this.products.find(p => p.product === pid);
+        if (product) {
+            product.quantity += quantity;
+        } else {
+            this.products.push({ product: pid, quantity });
+        }
+    }
+}
+
 class ProductManager {
     constructor(path) {
         this.path = path;
@@ -30,22 +46,19 @@ class ProductManager {
         this.loadProducts();
         console.log(this.products);
     }
-
+    
     loadProducts() {
-        if (fs.existsSync(this.path)) {
-            const data = fs.readFileSync(this.path, 'utf-8');
-            console.log(data)
-            try {
+        try {
+            if (fs.existsSync(this.path)) {
+                const data = fs.readFileSync(this.path, 'utf-8');
                 this.products = JSON.parse(data);
                 this.nextProductId = this.products.length ? Math.max(...this.products.map(product => product.id)) + 1 : 1;
-            } catch (error) {
-                console.error('Error al analizar el archivo JSON:', error);
-                this.products = [];
-                this.nextProductId = 1;
             }
+        } catch (error) {
+            console.error('Error al cargar los productos:', error);
         }
     }
-    
+
     saveProducts() {
         fs.writeFileSync(this.path, JSON.stringify(this.products));
     }
@@ -71,12 +84,12 @@ class ProductManager {
     }
 
     getProducts(limit) {
-        return limit ? this.products.slice(0, limit) : this.products;
         console.log()
+        return limit ? this.products.slice(0, limit) : this.products;
     }    
 
     getProductById(id) {
-        const product = this.products.find(p => p.id === id);
+        const product = this.products.find(p => p.id == id);
         if (!product) {
             console.error("Producto no encontrado.");
         }
@@ -102,6 +115,30 @@ class ProductManager {
         this.products.splice(index, 1);
         this.saveProducts();
     }
+
+    // Funciones para manejar carritos
+getCarts() {
+    return this.carts;
+}
+
+getCartById(cid) {
+    return this.carts.find(cart => cart.id === cid);
+}
+
+addCart() {
+    const newCart = new Cart();
+    this.carts.push(newCart);
+    return newCart;
+}
+
+addProductToCart(cid, pid, quantity) {
+    const cart = this.getCartById(cid);
+    if (!cart) {
+        console.error('Carrito no encontrado.');
+        return;
+    }
+    cart.addProduct(pid, quantity);
+}
 }
 
 module.exports = ProductManager;
