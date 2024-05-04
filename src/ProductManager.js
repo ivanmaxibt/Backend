@@ -38,6 +38,17 @@ class Cart {
     }
 }
 
+fs.access('carts.json', fs.constants.F_OK, (err) => {
+    if (err) {
+        fs.writeFile('carts.json', '[]', (err) => {
+            if (err) throw err;
+            console.log('Archivo carts.json creado exitosamente.');
+        });
+    } else {
+        console.log('El archivo carts.json ya existe.');
+    }
+});
+
 class ProductManager {
     constructor(path) {
         this.path = path;
@@ -117,28 +128,52 @@ class ProductManager {
     }
 
     // Funciones para manejar carritos
-getCarts() {
-    return this.carts;
-}
-
-getCartById(cid) {
-    return this.carts.find(cart => cart.id === cid);
-}
-
-addCart() {
-    const newCart = new Cart();
-    this.carts.push(newCart);
-    return newCart;
-}
-
-addProductToCart(cid, pid, quantity) {
-    const cart = this.getCartById(cid);
-    if (!cart) {
-        console.error('Carrito no encontrado.');
-        return;
+class CartManager {
+    constructor(path) {
+        this.path = path;
+        this.carts = [];
+        this.loadCarts();
+        console.log(this.carts);
     }
-    cart.addProduct(pid, quantity);
-}
+    
+    loadCarts() {
+        try {
+            if (fs.existsSync(this.path)) {
+                const data = fs.readFileSync(this.path, 'utf-8');
+                this.carts = JSON.parse(data);
+            }
+        } catch (error) {
+            console.error('Error al cargar los carritos:', error);
+        }
+    }
+
+    saveCarts() {
+        fs.writeFileSync(this.path, JSON.stringify(this.carts));
+    }
+
+    addCart(cart) {
+        this.carts.push(cart);
+        this.saveCarts();
+        console.log(this.carts);
+    }
+
+    getCartById(id) {
+        const cart = this.carts.find(c => c.id == id);
+        if (!cart) {
+            console.error("Carrito no encontrado.");
+        }
+        return cart;
+    }
+
+    deleteCart(id) {
+        const index = this.carts.findIndex(cart => cart.id === id);
+        if (index === -1) {
+            console.error('Carrito no encontrado.');
+            return;
+        }
+        this.carts.splice(index, 1);
+        this.saveCarts();
+    }
 }
 
 module.exports = ProductManager;
