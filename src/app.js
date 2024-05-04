@@ -4,6 +4,8 @@ app.use(express.json());
 
 const ProductManager = require('./ProductManager');
 const productManager = new ProductManager();
+const CartManager = require('./CartManager');
+const cartManager = new CartManager('carts.json');
 
 // Rutas para productos
 app.get('/api/products', (req, res) => {
@@ -38,7 +40,7 @@ app.delete('/api/products/:pid', (req, res) => {
 
 // Rutas para carritos
 app.get('/api/carts/:cid', (req, res) => {
-    const cart = productManager.getCartById(req.params.cid);
+    const cart = cartManager.getCartById(req.params.cid);
     if (!cart) {
         return res.status(404).json({ error: 'Carrito no encontrado' });
     }
@@ -46,12 +48,24 @@ app.get('/api/carts/:cid', (req, res) => {
 });
 
 app.post('/api/carts', (req, res) => {
-    const newCart = productManager.addCart();
+    const newCart = cartManager.addCart(); 
     res.status(201).json(newCart);
 });
 
 app.post('/api/carts/:cid/products/:pid', (req, res) => {
-    productManager.addProductToCart(req.params.cid, req.params.pid, req.body.quantity);
+    const cart = cartManager.getCartById(req.params.cid);
+    if (!cart) {
+        return res.status(404).json({ error: 'Carrito no encontrado' });
+    }
+
+    const product = productManager.getProductById(req.params.pid);
+    if (!product) {
+        return res.status(404).json({ error: 'Producto no encontrado' });
+    }
+
+    cart.addProduct(req.params.pid, req.body.quantity);
+    cartManager.saveCarts(); // Guarda los carritos después de agregar el producto
+
     res.status(201).end();
 });
 
